@@ -1,37 +1,78 @@
 <script>
-  import { Input, Label, Spinner } from "flowbite-svelte";
-  import { appStatusInfo } from "$lib/store";
-  const { url, pages, id } = $appStatusInfo;
+  import { Input, Label, Spinner } from "flowbite-svelte"
+  import { appStatusInfo, setAppStatusError } from "../store"
+  const { url, pages, id } = $appStatusInfo
 
-  let loading = false;
+  let answer = ""
+  let loading = false
 
-  const numOfImagesShow = Math.min(pages, 4)
-  const images = Array.from(
-    {length: numOfImagesShow},
-    (_, i) => {
-      const page = i+1
-      return url 
-        .replace("/upload/", `/upload/w_400,h_540,c_fill,pg_${page}/`)
-        .replace("pdf", ".jpg")
+  const numOfImagesToShow = Math.min(pages, 4)
+  const images = Array.from({ length: numOfImagesToShow }, (_, i) => {
+    const page = i + 1
+    return url
+      .replace("/upload/", `/upload/w_400,h_540,c_fill,pg_${page}/`)
+      .replace(".pdf", ".jpg")
+  })
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+
+    loading = true
+    answer = ""
+    const question = event.target.question.value
+
+    const searchParams = new URLSearchParams()
+    searchParams.append("id", id)
+    searchParams.append("question", question)
+
+    try {
+      const eventSource = new EventSource(`/api/ask?${searchParams.toString()}`)
+
+      eventSource.onmessage = (event) => {
+        loading = false
+        const incomingData = JSON.parse(event.data)
+
+        if (incomingData === "__END__") {
+          eventSource.close()
+          return
+        }
+
+        answer += incomingData
+      }
+    } catch (e) {
+      setAppStatusError()
+    } finally {
+      loading = false
     }
-  )
-
-  const handleSubmit = () => {
-
   }
 </script>
 
-<div class="grid grid-cols-1-4 gap-2">
+<div class="grid grid-cols-4 gap-2">
   {#each images as image}
-    <img src={image} alt="PDF page" class="rounded w-full h-auto">
+    <img
+      class="rounded w-full h-auto aspect-[400/540]"
+      src={image}
+      alt="PDF page"
+    />
   {/each}
 </div>
 
-<form on:submit={handleSubmit}>
-  <label for="question-input" class="block mb-2">Que pregunta tienes</label>
-  <input
-    id="question-input"
-    required
-    placeholder="De que trata este documento?"
-  />
+<form class="mt-8" on:submit={handleSubmit}>
+  <Label for="question" class="block mb-2">Deja aquí tu pregunta</Label>
+  <Input id="question" required placeholder="¿De qué trata este documento?"
+  ></Input>
 </form>
+
+{#if loading}
+  <div class="mt-10 flex justify-center items-center flex-col gap-y-2">
+    <Spinner />
+    <p class="opacity-75">Esperando respuesta...</p>
+  </div>
+{/if}
+
+{#if answer}
+  <div class="mt-8">
+    <p class="font-medium">Respuesta:</p>
+    <p>{answer}</p>
+  </div>
+{/if}
