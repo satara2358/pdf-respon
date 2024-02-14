@@ -1,0 +1,18 @@
+- npm create astro@latest
+- samples
+- typsScript
+- Strict
+- Dependencias 
+- npx astro add tailwind
+- npm install
+- https://bg.ibelick.com/    |||  https://github.com/ibelick/ui-snippets?tab=readme-ov-file
+- npx astro add svelte
+- npm i -D flowbite-svelte flowbite
+- npm install @astrojs/svelte@^5.0.3 svelte@^4.2.10
+- npm i svelte-file-dropzone
+- npm i cloudinary
+
+|| control shift p para paste como html
+
+-> npm install openai
+-> 
